@@ -1,78 +1,35 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
-import { useState, useMemo, createContext, useContext } from 'react';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import Home from './pages/Home';
-import About from './pages/About';
-import Services from './pages/Services';
-import Contact from './pages/Contact';
-
-// Créer le contexte pour le thème
-export const ColorModeContext = createContext({ 
-  toggleColorMode: () => {} 
-});
+import { useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
+import './App.css'
 
 function App() {
-  // Récupérer le mode depuis le localStorage ou utiliser 'light' par défaut
-  const [mode, setMode] = useState<'light' | 'dark'>(
-    localStorage.getItem('theme') as 'light' | 'dark' || 'light'
-  );
-
-  const colorMode = useMemo(
-    () => ({
-      toggleColorMode: () => {
-        setMode((prevMode) => {
-          const newMode = prevMode === 'light' ? 'dark' : 'light';
-          localStorage.setItem('theme', newMode);
-          return newMode;
-        });
-      },
-    }),
-    [],
-  );
-
-  const theme = useMemo(
-    () =>
-      createTheme({
-        palette: {
-          mode,
-          primary: {
-            main: '#3b82f6',
-          },
-          secondary: {
-            main: '#10b981',
-          },
-          background: {
-            default: mode === 'light' ? '#f3f4f6' : '#1a1a1a',
-            paper: mode === 'light' ? '#ffffff' : '#2d2d2d',
-          },
-        },
-      }),
-    [mode],
-  );
+  const [count, setCount] = useState(0)
 
   return (
-    <ColorModeContext.Provider value={colorMode}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router>
-          <div className={`flex flex-col min-h-screen ${mode === 'dark' ? 'dark' : ''}`}>
-            <Navbar />
-            <main className="flex-grow pt-16">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/contact" element={<Contact />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-        </Router>
-      </ThemeProvider>
-    </ColorModeContext.Provider>
-  );
+    <>
+      <div>
+        <a href="https://vite.dev" target="_blank">
+          <img src={viteLogo} className="logo" alt="Vite logo" />
+        </a>
+        <a href="https://react.dev" target="_blank">
+          <img src={reactLogo} className="logo react" alt="React logo" />
+        </a>
+      </div>
+      <h1>Vite + React</h1>
+      <div className="card">
+        <button onClick={() => setCount((count) => count + 1)}>
+          count is {count}
+        </button>
+        <p>
+          Edit <code>src/App.tsx</code> and save to test HMR
+        </p>
+      </div>
+      <p className="read-the-docs">
+        Click on the Vite and React logos to learn more
+      </p>
+    </>
+  )
 }
 
-export default App;
+export default App
