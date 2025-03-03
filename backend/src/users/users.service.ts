@@ -13,6 +13,14 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
+  async findOne(id: number): Promise<User> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new Error(`User with id ${id} not found`);
+    }
+    return user;
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return await this.usersRepository.findOne({ where: { email } });
   }

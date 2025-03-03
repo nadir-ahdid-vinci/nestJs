@@ -18,6 +18,6 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   logger.log('Application démarrée sur le port 3000');
 
-  await app.listen(3000);
+  await app.listen(8000);
 }
 bootstrap();

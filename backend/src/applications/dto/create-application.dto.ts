@@ -1,5 +1,5 @@
 // applications/dto/create-application.dto.ts (DTO pour la création d'une application)
-import { IsString, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsNumber, IsNotEmpty } from 'class-validator';
 
 export class CreateApplicationDto {
   @IsString()
@@ -14,4 +14,7 @@ export class CreateApplicationDto {
   @IsOptional()
   @IsString()
   rewardScale?: string;
+
+  @IsNumber()
+  ownerId: number;
 }

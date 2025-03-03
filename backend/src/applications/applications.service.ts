@@ -4,10 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Application } from './entities/application.entity';
 import { CreateApplicationDto } from './dto/create-application.dto';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class ApplicationsService {
-  constructor(@InjectRepository(Application) private appRepository: Repository<Application>) {}
+  constructor(
+    @InjectRepository(Application) private appRepository: Repository<Application>,
+    private usersService: UsersService,
+  ) {}
 
   findAll(): Promise<Application[]> {
     return this.appRepository.find({ relations: ['owner'] });
@@ -21,7 +25,17 @@ export class ApplicationsService {
     return application;
   }
 
-  create(createApplicationDto: CreateApplicationDto): Promise<Application> {
-    return this.appRepository.save(createApplicationDto);
+  async create(createApplicationDto: CreateApplicationDto): Promise<Application> {
+    const owner = await this.usersService.findOne(createApplicationDto.ownerId);
+    if (!owner) {
+      throw new Error(`Owner with id ${createApplicationDto.ownerId} not found`);
+    }
+
+    const application = this.appRepository.create({
+      ...createApplicationDto,
+      owner,
+    });
+
+    return this.appRepository.save(application);
   }
 }

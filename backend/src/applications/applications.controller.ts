@@ -9,8 +9,8 @@ export class ApplicationsController {
   constructor(private appService: ApplicationsService) {}
 
   @Get()
-  findAll(): Promise<Application[]> {
-    return this.appService.findAll();
+  async findAll(): Promise<Application[]> {
+    return await this.appService.findAll();
   }
 
   @Get(':id')
