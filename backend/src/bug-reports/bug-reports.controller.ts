@@ -1,5 +1,4 @@
-// bug-reports/bug-reports.controller.ts (Contrôleur des rapports de bug)
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { CreateBugReportDto } from './dto/create-bug-report.dto';
 import { BugReportsService } from './bug-reports.service';
 import { BugReport } from './entities/bug-report.entity';
@@ -8,14 +7,19 @@ import { BugReport } from './entities/bug-report.entity';
 export class BugReportsController {
   constructor(private bugReportsService: BugReportsService) {}
 
-  @Get()
-  findAll(): Promise<BugReport[]> {
-    return this.bugReportsService.findAll();
+  @Get('latest')
+  findNumberLatest(): Promise<BugReport[]> {
+    return this.bugReportsService.findNumberLatest();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number): Promise<BugReport> {
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<BugReport> {
     return this.bugReportsService.findOne(id);
+  }
+
+  @Get()
+  findAll(): Promise<BugReport[]> {
+    return this.bugReportsService.findAll();
   }
 
   @Post()

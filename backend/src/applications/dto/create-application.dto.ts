@@ -1,20 +1,20 @@
 // applications/dto/create-application.dto.ts (DTO pour la création d'une application)
-import { IsString, IsEnum, IsOptional, IsNumber, IsNotEmpty } from 'class-validator';
+import { IsString, IsEnum, IsNumber, IsNotEmpty, Min } from 'class-validator';
+import { ApplicationStatus } from '../entities/application.entity';
 
 export class CreateApplicationDto {
   @IsString()
+  @IsNotEmpty()
   name: string;
 
   @IsString()
+  @IsNotEmpty()
   description: string;
 
-  @IsEnum(['OPEN', 'CLOSED'])
+  @IsEnum(ApplicationStatus)
   status: string;
 
-  @IsOptional()
-  @IsString()
-  rewardScale?: string;
-
   @IsNumber()
+  @Min(1)
   ownerId: number;
 }

@@ -1,18 +1,25 @@
 // main.ts (point d'entrée de l'application NestJS)
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import * as csurf from 'csurf';
 import { Logger } from '@nestjs/common';
+import { ErrorsInterceptor } from './interceptors/errors.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Sécurisation de l'application
   app.use(helmet()); // Protection contre les attaques web courantes
-  app.enableCors(); // Activation du CORS pour éviter les restrictions cross-origin
+  app.enableCors({
+    origin: "http://localhost:3000", // Remplace "*" par ton frontend
+    credentials: true, // Permet d'envoyer les cookies/session
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
+
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
+  app.useGlobalInterceptors(new ErrorsInterceptor());
   
   // Logger
   const logger = new Logger('Bootstrap');

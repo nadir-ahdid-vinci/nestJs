@@ -1,4 +1,3 @@
-
 // bug-reports/bug-reports.service.ts (Service des rapports de bug)
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -24,5 +23,13 @@ export class BugReportsService {
 
   async create(createBugReportDto: CreateBugReportDto): Promise<BugReport> {
     return this.bugReportRepo.save(createBugReportDto);
+  }
+
+  async findNumberLatest(): Promise<BugReport[]> {
+    return this.bugReportRepo.find({
+      take: 5,
+      order: { createdAt: 'DESC' },
+      relations: ['hunter', 'application'],
+    });
   }
 }
