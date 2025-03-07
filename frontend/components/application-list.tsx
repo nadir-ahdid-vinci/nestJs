@@ -1,10 +1,11 @@
-import type { Application } from "@/lib/applications"
-import { formatDate } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import type { Application } from "@/lib/applications";
+import { formatDate } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
 interface ApplicationListProps {
-    applications: Application[]
+    applications: Application[];
 }
 
 export function ApplicationList({ applications }: ApplicationListProps) {
@@ -13,10 +14,8 @@ export function ApplicationList({ applications }: ApplicationListProps) {
         <div className="text-center p-8 border rounded-lg bg-muted/50">
             <p>Aucune application disponible pour le moment.</p>
         </div>
-        )
+        );
     }
-
-    console.log(applications, "applications")
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -25,7 +24,9 @@ export function ApplicationList({ applications }: ApplicationListProps) {
             <CardHeader>
                 <div className="flex justify-between items-start">
                 <div>
-                    <CardTitle>{app.name}</CardTitle>
+                    <CardTitle>
+                    <Link href={`/application/${app.id}`}>{app.name}</Link>
+                    </CardTitle>
                     <CardDescription>Par {app.owner.username}</CardDescription>
                 </div>
                 <StatusBadge status={app.status} />
@@ -38,26 +39,25 @@ export function ApplicationList({ applications }: ApplicationListProps) {
             </Card>
         ))}
         </div>
-    )
-}
+    );
+    }
 
-function StatusBadge({ status }: { status: string }) {
-    let variant: "default" | "secondary" | "destructive" | "outline" = "default"
+    function StatusBadge({ status }: { status: string }) {
+    let variant: "default" | "secondary" | "destructive" | "outline" = "default";
 
     switch (status) {
         case "OPEN":
-        variant = "default"
-        break
+        variant = "default";
+        break;
         case "CLOSED":
-        variant = "destructive"
-        break
+        variant = "destructive";
+        break;
         case "PENDING":
-        variant = "secondary"
-        break
+        variant = "secondary";
+        break;
         default:
-        variant = "outline"
+        variant = "outline";
     }
 
-    return <Badge variant={variant}>{status}</Badge>
+    return <Badge variant={variant}>{status}</Badge>;
 }
-

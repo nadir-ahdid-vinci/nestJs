@@ -1,4 +1,4 @@
-import { getApplicationsDev } from "@/lib/applications"
+import { getApplications } from "@/lib/applications"
 import { getSession } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { hasRequiredRole, ROLES } from "@/lib/roles"
@@ -12,7 +12,7 @@ export default async function DevApplicationsPage() {
         redirect("/login?error=unauthorized")
     }
 
-    const applications = await getApplicationsDev(+session.user.id)
+    const applications = await getApplications("dev")
 
     return (
         <main className="flex min-h-screen flex-col p-8">

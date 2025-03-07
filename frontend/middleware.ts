@@ -10,7 +10,7 @@ export async function middleware(request: NextRequest) {
     { path: "/admin", requiredRole: ROLES.HUNTER_ADMIN },
     { path: "/dev", requiredRole: ROLES.HUNTER_DEV },
     { path: "/hunter", requiredRole: ROLES.HUNTER },
-    { path: "/application", requiredRole: ROLES.HUNTER_DEV },
+    { path: "/application", requiredRole: ROLES.HUNTER },
   ]
 
   // Trouver la route protégée correspondante

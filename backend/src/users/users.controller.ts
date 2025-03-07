@@ -12,8 +12,9 @@ import { Role } from 'src/auth/roles.decorator';
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @Role('HUNTER')
+  
   @Get()
+  @Role('HUNTER_ADMIN')
   async findAll(): Promise<User[]> {
     const users = await this.usersService.findAll();
     if (!users) {
@@ -23,6 +24,7 @@ export class UsersController {
   }
 
   @Get(':email')
+  @Role('HUNTER_ADMIN')
   async findByEmail(@Param('email') email: string): Promise<User> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
@@ -32,7 +34,8 @@ export class UsersController {
   }
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto): Promise<User> {
+  @Role('HUNTER_ADMIN')
+  async create(@Body() createUserDto: CreateUserDto): Promise<User> {
     return this.usersService.create(createUserDto);
   }
 }

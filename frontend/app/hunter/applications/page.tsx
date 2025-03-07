@@ -1,17 +1,18 @@
-import { getApplicationsHunter } from "@/lib/applications"
+import { getApplications } from "@/lib/applications"
 import { getSession } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { ApplicationList } from "@/components/application-list"
+import { hasRequiredRole, ROLES } from "@/lib/roles"
 
 export default async function HunterApplicationsPage() {
-  const session = await getSession()
+    const session = await getSession()
 
     // Vérifier si l'utilisateur est authentifié
-    if (!session) {
+    if (!session || !hasRequiredRole(session.user.role, ROLES.HUNTER)) {
     redirect("/login?error=unauthorized")
     }
 
-    const applications = await getApplicationsHunter()
+    const applications = await getApplications("hunter")
 
     return (
     <main className="flex min-h-screen flex-col p-8">

@@ -26,7 +26,6 @@ export async function Header() {
     title: "Admin",
     items: [
       { title: "Applications", href: "/admin/applications" },
-      { title: "Dashboard", href: "/admin" },
     ],
   }
 
