@@ -25,10 +25,10 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider defaultTheme="system">
-          <div className="relative min-h-screen flex flex-col">
+            <div className="relative min-h-screen flex flex-col w-full">
             <Header />
-            <div className="flex-1 bg-background text-foreground">{children}</div>
-          </div>
+            <div className="flex-1 bg-background text-foreground mx-auto w-full">{children}</div>
+            </div>
         </ThemeProvider>
       </body>
     </html>

@@ -19,4 +19,5 @@ export class Order {
 
   @CreateDateColumn()
   createdAt: Date;
+  hunter: any;
 }

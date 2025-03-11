@@ -32,7 +32,8 @@ export async function getApplications(page: string): Promise<Application[]> {
   try {
     const response = await fetch(`${process.env.API_URL}/applications?${queryParams.toString()}`, {
       headers: {
-      Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
+        "Cache-Control": "no-cache",
       },
     })
 
@@ -58,6 +59,7 @@ export async function getApplication(id: number): Promise<Application | null> {
     const response = await fetch(`${process.env.API_URL}/applications/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
+        "Cache-Control": "no-cache",
       },
     })
 
@@ -92,6 +94,7 @@ export async function createApplication(data: CreateApplicationData): Promise<Ap
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
+        "Cache-Control": "no-cache",
       },
       body: JSON.stringify(data),
     })
@@ -106,6 +109,3 @@ export async function createApplication(data: CreateApplicationData): Promise<Ap
     return null
   }
 }
-
-
-

@@ -16,11 +16,11 @@ export class Reward {
   imageUrl: string;
 
   @Column()
-  cost: number;
+  price: number;
 
   @Column({ default: 0 })
   quantity: number;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @Column({ default: false })
+  locked: boolean;
 }

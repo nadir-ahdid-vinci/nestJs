@@ -1,5 +1,5 @@
 // rewards/dto/create-reward.dto.ts (DTO pour la création d'une récompense)
-import { IsString, IsInt, Min } from 'class-validator';
+import { IsString, IsInt, Min, IsBoolean } from 'class-validator';
 
 export class CreateRewardDto {
   @IsString()
@@ -13,9 +13,12 @@ export class CreateRewardDto {
 
   @IsInt()
   @Min(1)
-  cost: number;
+  price: number;
 
   @IsInt()
   @Min(0)
   quantity: number;
+
+  @IsBoolean()
+  locked: boolean;
 }

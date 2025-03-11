@@ -26,50 +26,51 @@ export async function Header() {
     title: "Admin",
     items: [
       { title: "Applications", href: "/admin/applications" },
+      { title: "Récompenses", href: "/admin/rewards" },
     ],
   }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
-        <div className="mr-4 flex">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="font-bold text-xl">HunterApp</span>
-          </Link>
-        </div>
+      <div className="container flex h-14 items-center justify-between">
+      <div className="flex">
+        <Link href="/" className="flex items-center space-x-2">
+        <span className="font-bold text-xl">HunterApp</span>
+        </Link>
+      </div>
 
-        {isLoggedIn && (
-          <nav className="flex items-center gap-2 text-sm">
-            {/* Menu Hunter (visible par tous) */}
-            <NavMenu title={hunterMenu.title} items={hunterMenu.items} />
+      {isLoggedIn && (
+        <nav className="flex items-center gap-2 text-sm">
+        {/* Menu Hunter (visible par tous) */}
+        <NavMenu title={hunterMenu.title} items={hunterMenu.items} />
 
-            {/* Menu Dev (visible par Dev et Admin) */}
-            {session.user.role && hasRequiredRole(session.user.role, ROLES.HUNTER_DEV) && (
-              <NavMenu title={devMenu.title} items={devMenu.items} />
-            )}
-
-            {/* Menu Admin (visible uniquement par Admin) */}
-            {session.user.role && hasRequiredRole(session.user.role, ROLES.HUNTER_ADMIN) && (
-              <NavMenu title={adminMenu.title} items={adminMenu.items} />
-            )}
-          </nav>
+        {/* Menu Dev (visible par Dev et Admin) */}
+        {session.user.role && hasRequiredRole(session.user.role, ROLES.HUNTER_DEV) && (
+          <NavMenu title={devMenu.title} items={devMenu.items} />
         )}
 
-        <div className="ml-auto flex items-center gap-2">
-          <ThemeToggle />
+        {/* Menu Admin (visible uniquement par Admin) */}
+        {session.user.role && hasRequiredRole(session.user.role, ROLES.HUNTER_ADMIN) && (
+          <NavMenu title={adminMenu.title} items={adminMenu.items} />
+        )}
+        </nav>
+      )}
 
-          {isLoggedIn ? (
-            <form action={logout}>
-              <Button variant="ghost" size="icon" type="submit" aria-label="Se déconnecter">
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </form>
-          ) : (
-            <Button asChild variant="default" size="sm">
-              <Link href="/login">Se connecter</Link>
-            </Button>
-          )}
-        </div>
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+
+        {isLoggedIn ? (
+        <form action={logout}>
+          <Button variant="ghost" size="icon" type="submit" aria-label="Se déconnecter">
+          <LogOut className="h-5 w-5" />
+          </Button>
+        </form>
+        ) : (
+        <Button asChild variant="default" size="sm">
+          <Link href="/login">Se connecter</Link>
+        </Button>
+        )}
+      </div>
       </div>
     </header>
   )
