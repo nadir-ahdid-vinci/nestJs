@@ -1,45 +1,35 @@
-// app.module.ts (Module principal de l'application)
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
-import { UsersModule } from './users/users.module';
-import { ApplicationsModule } from './applications/applications.module';
-import { BugReportsModule } from './bug-reports/bug-reports.module';
-import { RewardsModule } from './rewards/rewards.module';
-import { OrdersModule } from './orders/orders.module';
-import { ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { UsersModule } from './users/users.module';
+import { RewardsModule } from './rewards/rewards.module';
+import { OrdersModule } from './orders/orders.module';
+import { ApplicationsModule } from './applications/applications.module';
+import { ReportsModule } from './reports/reports.module';
+import { getDatabaseConfig } from './config/database.config';
+import { LoggerModule } from './logger/logger.module';
 import { AuthModule } from './auth/auth.module';
-import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
+      useFactory: getDatabaseConfig,
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USER'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true,
-        connectTimeout: 30000,
-        logging: false,
-      }),
     }),
     AuthModule,
+    LoggerModule,
     UsersModule,
-    ApplicationsModule,
-    BugReportsModule,
     RewardsModule,
     OrdersModule,
+    ApplicationsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

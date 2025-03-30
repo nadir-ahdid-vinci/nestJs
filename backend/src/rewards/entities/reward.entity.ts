@@ -1,26 +1,32 @@
-// rewards/reward.entity.ts (Modèle Récompenses)
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { Order } from '../../orders/entities/order.entity';
 
 @Entity()
 export class Reward {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ unique: true })
   name: string;
 
-  @Column({ type: 'text' })
+  @Column('text')
   description: string;
 
   @Column()
-  imageUrl: string;
-
-  @Column()
-  price: number;
+  points: number;
 
   @Column({ default: 0 })
   quantity: number;
 
-  @Column({ default: false })
-  locked: boolean;
+  @Column({ nullable: true })
+  photo: string;
+
+  @Column({ default: true })
+  available: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @OneToMany(() => Order, order => order.reward)
+  orders: Order[];
 }

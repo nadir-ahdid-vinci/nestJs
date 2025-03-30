@@ -1,17 +1,74 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
-import { CreateApplicationDto } from './dto/create-application.dto';
-
-const mockApplicationsService = {
-  create: jest.fn((dto, req) => Promise.resolve({ id: 1, ...dto, ownerId: req.user.id })),
-  findAll: jest.fn(() => Promise.resolve([{ id: 1, name: 'Test App', description: 'A test', status: 'active', ownerId: 1 }])),
-  findOne: jest.fn(id => Promise.resolve(id === 1 ? { id: 1, name: 'Test App', description: 'A test', status: 'active', ownerId: 1 } : null)),
-  update: jest.fn((id, dto, req) => Promise.resolve({ id, ...dto, ownerId: req.user.id })),
-};
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Application } from './entities/application.entity';
+import { Criticality } from './entities/criticality.entity';
+import { UsersService } from '../users/users.service';
+import { ApplicationLogService } from './services/application-log.service';
+import { ApplicationLog } from './entities/application-log.entity';
+import { UserRole } from '../users/enums/user-role.enum';
+import { ApplicationStatus } from './entities/application.entity';
 
 describe('ApplicationsController', () => {
   let controller: ApplicationsController;
+  let service: ApplicationsService;
+
+  // Mock des données de test
+  const mockApplications: Application[] = [
+    {
+      id: 1,
+      name: 'Test App 1',
+      description: 'Description 1',
+      status: ApplicationStatus.OPEN,
+      scope: 'Scope 1',
+      user: { id: 1, email: 'dev@test.com' } as any,
+      criticality: { id: 1, name: 'High' } as any,
+      createdAt: new Date(),
+      logo: 'logo1.jpg',
+      reports: [],
+      logs: [],
+    },
+    {
+      id: 2,
+      name: 'Test App 2',
+      description: 'Description 2',
+      status: ApplicationStatus.CLOSED,
+      scope: 'Scope 2',
+      user: { id: 2, email: 'dev2@test.com' } as any,
+      criticality: { id: 1, name: 'Medium' } as any,
+      createdAt: new Date(),
+      logo: 'logo2.jpg',
+      reports: [],
+      logs: [],
+    },
+  ];
+
+  const mockRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+    findOne: jest.fn(),
+    createQueryBuilder: jest.fn(() => ({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(mockApplications),
+      getOne: jest.fn().mockResolvedValue(null),
+    })),
+  };
+
+  const mockUsersService = {
+    findOne: jest.fn(),
+  };
+
+  const mockApplicationLogService = {
+    create: jest.fn(),
+    findAll: jest.fn(),
+    findByApplication: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -19,46 +76,110 @@ describe('ApplicationsController', () => {
       providers: [
         {
           provide: ApplicationsService,
-          useValue: mockApplicationsService,
+          useValue: {
+            findAll: jest.fn(),
+            findOne: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            getLogs: jest.fn(),
+            getApplicationLogs: jest.fn(),
+            findAllCriticality: jest.fn(),
+            findOneCriticality: jest.fn(),
+            createCriticality: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(Application),
+          useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(Criticality),
+          useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(ApplicationLog),
+          useValue: mockRepository,
+        },
+        {
+          provide: UsersService,
+          useValue: mockUsersService,
+        },
+        {
+          provide: ApplicationLogService,
+          useValue: mockApplicationLogService,
         },
       ],
     }).compile();
 
     controller = module.get<ApplicationsController>(ApplicationsController);
+    service = module.get<ApplicationsService>(ApplicationsService);
   });
 
-  it('devrait être défini', () => {
+  it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  it('devrait créer une application', async () => {
-    const dto: CreateApplicationDto = { 
-      name: 'New App', 
-      description: 'A new test app', 
-      status: 'active', 
-      ownerId: 1 
-    };
-    const req = { user: { id: 1 } }; // Simuler un utilisateur connecté
+  describe('findAll', () => {
+    it('should return all applications for ADMIN role', async () => {
+      const req = {
+        user: { role: UserRole.ADMIN, userId: 1 },
+      };
 
-    expect(await controller.create(dto, req)).toEqual({ id: 1, ...dto });
-    expect(mockApplicationsService.create).toHaveBeenCalledWith(dto, req);
+      jest.spyOn(service, 'findAll').mockResolvedValue(mockApplications);
+
+      const result = await controller.findAll('admin', req);
+
+      expect(result).toEqual(mockApplications);
+      expect(service.findAll).toHaveBeenCalledWith(1, 'admin');
+    });
+
+    it('should return only open applications for HUNTER role', async () => {
+      const req = {
+        user: { role: UserRole.HUNTER, userId: 2 },
+      };
+
+      const openApplications = mockApplications.filter(
+        app => app.status === ApplicationStatus.OPEN,
+      );
+      jest.spyOn(service, 'findAll').mockResolvedValue(openApplications);
+
+      const result = await controller.findAll('hunter', req);
+
+      expect(result).toEqual(openApplications);
+      expect(service.findAll).toHaveBeenCalledWith(2, 'hunter');
+    });
+
+    it('should return only user applications for DEV role', async () => {
+      const req = {
+        user: { role: UserRole.DEV, userId: 1 },
+      };
+
+      const userApplications = mockApplications.filter(app => app.user.id === req.user.userId);
+      jest.spyOn(service, 'findAll').mockResolvedValue(userApplications);
+
+      const result = await controller.findAll('dev', req);
+
+      expect(result).toEqual(userApplications);
+      expect(service.findAll).toHaveBeenCalledWith(1, 'dev');
+    });
+
+    it('should throw error for unauthorized access', async () => {
+      const req = {
+        user: { role: UserRole.HUNTER, id: 1 },
+      };
+
+      await expect(controller.findAll('admin', req)).rejects.toThrow('Unauthorized');
+    });
   });
 
-  it('devrait récupérer toutes les applications', async () => {
-    expect(await controller.findAll()).toEqual([{ id: 1, name: 'Test App', description: 'A test', status: 'active', ownerId: 1 }]);
-    expect(mockApplicationsService.findAll).toHaveBeenCalled();
-  });
+  describe('findOne', () => {
+    it('should return application for every user', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockApplications[0]);
 
-  it('devrait récupérer une application par ID', async () => {
-    expect(await controller.findOne(1)).toEqual({ id: 1, name: 'Test App', description: 'A test', status: 'active', ownerId: 1 });
-    expect(mockApplicationsService.findOne).toHaveBeenCalledWith(1);
-  });
+      const result = await controller.findOne(1);
 
-  it('devrait mettre à jour une application', async () => {
-    const updateDto = { name: 'Updated App', description: 'Updated description', status: 'inactive' };
-    const req = { user: { id: 1 } };
-
-    expect(await controller.update(1, updateDto, req)).toEqual({ id: 1, ...updateDto, ownerId: req.user.id });
-    expect(mockApplicationsService.update).toHaveBeenCalledWith(1, updateDto, req);
+      expect(result).toEqual(mockApplications[0]);
+      expect(service.findOne).toHaveBeenCalledWith(1);
+    });
   });
 });

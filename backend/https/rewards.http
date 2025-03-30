@@ -1,0 +1,177 @@
+### Configuration
+@baseUrl = http://localhost:3000
+@email = admin@admin.com
+@password = Admin123@
+
+### 1. Connexion (À exécuter en premier)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{email}}",
+    "password": "{{password}}"
+}
+
+### Stockage du token
+@authToken = {{login.response.body.token}}
+
+### 2. Test de Pagination
+# Devrait retourner 8 récompenses maximum
+GET {{baseUrl}}/rewards?page=2
+Authorization: Bearer {{authToken}}
+
+### 2.5 récupérer une récompense
+GET {{baseUrl}}/rewards/7
+Authorization: Bearer {{authToken}}
+
+### 3. Création d'une récompense
+POST {{baseUrl}}/rewards
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="name"
+
+Médaille d'or
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Une belle médaille en or pour récompenser vos efforts
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="points"
+
+100
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="quantity"
+
+10
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="available"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo"; filename="medal.png"
+Content-Type: image/png
+
+< C:/Users/Nadir/Desktop/nestJs/backend/https/medal.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 4. Test de validation MIME Type
+# Ce test doit échouer avec une erreur 400
+POST {{baseUrl}}/rewards
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="name"
+
+Test Fichier Invalide
+--boundary
+Content-Disposition: form-data; name="description"
+
+Test avec un fichier texte
+--boundary
+Content-Disposition: form-data; name="points"
+
+100
+--boundary
+Content-Disposition: form-data; name="quantity"
+
+10
+--boundary
+Content-Disposition: form-data; name="available"
+
+true
+--boundary
+Content-Disposition: form-data; name="photo"; filename="test.txt"
+Content-Type: text/plain
+
+Ceci n'est pas une image
+--boundary--
+
+### 5. Test de Rate Limiting
+# Exécuter cette requête plusieurs fois rapidement
+# Après 10 requêtes, vous devriez recevoir une erreur 429
+POST {{baseUrl}}/rewards
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="name"
+
+Test Rate Limit {{$timestamp}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Test de limitation de requêtes
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="points"
+
+100
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="quantity"
+
+10
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="available"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo"; filename="logo.jpg"
+Content-Type: image/jpeg
+
+< ../../backend/src/applications/tests/logo.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 6. Mise à jour d'une récompense
+# Remplacez {id} par l'ID d'une récompense existante
+PATCH {{baseUrl}}/rewards/26
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Médaille d'argent",
+  "description": "Une belle médaille en argent pour récompenser vos efforts",
+  "points": 150
+}
+
+### Supprimer un reward
+DELETE {{baseUrl}}/rewards/26
+Authorization: Bearer {{authToken}}
+
+### Récupérer les logs d'un reward
+GET {{baseUrl}}/rewards/26/logs
+Authorization: Bearer {{authToken}}
+
+### Guide d'utilisation des tests :
+
+# Étape 1 : Préparation
+# ----------------------
+# 1. Assurez-vous que votre serveur NestJS est en cours d'exécution
+# 2. L'image de test est déjà disponible dans src/applications/tests/logo.jpg
+# 3. Vérifiez que les identifiants admin sont corrects (@email et @password)
+
+# Étape 2 : Exécution des tests
+# -----------------------------
+# 1. Exécutez d'abord la requête "Connexion" pour obtenir le token
+# 2. Testez la pagination pour voir les récompenses existantes
+# 3. Créez une nouvelle récompense (Test 3)
+# 4. Testez la validation MIME Type (Test 4) - doit échouer
+# 5. Testez le Rate Limiting (Test 5) - exécutez rapidement 11 fois
+# 6. Testez la mise à jour (Test 6) - utilisez un ID valide
+
+# Résultats attendus
+# -----------------
+# Test 2 : Maximum 8 récompenses par page
+# Test 3 : Création réussie avec image compressée
+# Test 4 : Erreur 400 - Type de fichier non valide
+# Test 5 : Erreur 429 après 10 requêtes
+# Test 6 : Mise à jour réussie avec nouvelle image
+
+# Notes importantes
+# ----------------
+# - Les images sont automatiquement compressées à 800x800 max
+# - Le rate limiting se réinitialise après 1 minute
+# - Seuls les fichiers JPG et PNG sont acceptés
+# - Taille maximale des fichiers : 5MB

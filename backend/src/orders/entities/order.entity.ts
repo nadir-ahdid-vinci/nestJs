@@ -1,23 +1,22 @@
-// orders/order.entity.ts (Modèle Commandes)
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, Column } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Reward } from '../../rewards/entities/reward.entity';
+import { OrderStatus } from '../order-statuses/entities/order-status.entity';
 
 @Entity()
 export class Order {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, user => user.orders)
   user: User;
 
-  @ManyToOne(() => Reward)
+  @ManyToOne(() => Reward, reward => reward.orders)
   reward: Reward;
 
-  @Column({ type: 'enum', enum: ['PENDING', 'DELIVERED'], default: 'PENDING' })
-  status: string;
-
-  @CreateDateColumn()
+  @Column()
   createdAt: Date;
-  hunter: any;
+
+  @ManyToOne(() => OrderStatus, orderStatus => orderStatus.orders)
+  status: OrderStatus;
 }

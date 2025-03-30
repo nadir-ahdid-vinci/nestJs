@@ -1,75 +1,65 @@
-// main.ts (point d'entrée de l'application NestJS)
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import helmet from 'helmet';
-import { WinstonModule } from 'nest-winston';
-import * as winston from 'winston';
-import 'winston-daily-rotate-file';
-import { ErrorsInterceptor } from './interceptors/errors.interceptor';
-import { LoggingInterceptor } from './interceptors/logging.interceptor';
-import { AllExceptionsFilter } from './filters/all-exceptions.filter';
+import * as compression from 'compression';
+import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  // Configuration de Winston
-  const app = await NestFactory.create(AppModule, {
-    logger: WinstonModule.createLogger({
-      transports: [
-        // Console transport
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.colorize(),
-            winston.format.printf(({ timestamp, level, message, context }) => {
-              return `${timestamp} [${context}] ${level}: ${message}`;
-            }),
-          ),
-        }),
-        // Fichier rotatif pour tous les logs
-        new winston.transports.DailyRotateFile({
-          filename: 'logs/application-%DATE%.log',
-          datePattern: 'YYYY-MM-DD',
-          zippedArchive: true,
-          maxSize: '20m',
-          maxFiles: '14d',
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.json(),
-          ),
-        }),
-        // Fichier séparé pour les erreurs
-        new winston.transports.DailyRotateFile({
-          filename: 'logs/error-%DATE%.log',
-          datePattern: 'YYYY-MM-DD',
-          zippedArchive: true,
-          maxSize: '20m',
-          maxFiles: '14d',
-          level: 'error',
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.json(),
-          ),
-        }),
-      ],
-    }),
+  const logger = new Logger('Bootstrap');
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const configService = app.get(ConfigService);
+
+  // Security
+  app.use(helmet());
+  app.enableCors({
+    origin: configService.get('CORS_ORIGIN', '*'),
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    credentials: true,
   });
 
-  // Sécurisation de l'application
-  app.use(helmet()); // Protection contre les attaques web courantes
-  app.enableCors({
-    origin: '*', // Remplace "*" par ton frontend
-    credentials: true, // Permet d'envoyer les cookies/session
+  // Servir les fichiers statiques
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads',
   });
+
+  // Compression
+  app.use(compression());
+
+  // Configuration Swagger
+  const config = new DocumentBuilder()
+    .setTitle('ULB Bug Bounty API')
+    .setDescription('API pour la plateforme de Bug Bounty')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
   );
 
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
-  app.useGlobalInterceptors(new ErrorsInterceptor());
-  app.useGlobalInterceptors(new LoggingInterceptor());
+  app.useGlobalFilters(new HttpExceptionFilter());
 
-  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get('Reflector')));
 
-  await app.listen(8000);
+  // Start server
+  const port = configService.get<number>('PORT', 3000);
+  await app.listen(port);
+  logger.log(`Application is running on: http://localhost:${port}`);
+  logger.log(`Swagger documentation is available at: http://localhost:${port}/api`);
 }
 bootstrap();

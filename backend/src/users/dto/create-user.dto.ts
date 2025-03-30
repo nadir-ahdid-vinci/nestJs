@@ -1,19 +1,37 @@
-// users/dto/create-user.dto.ts (DTO pour la création d'un utilisateur)
-import { Transform } from 'class-transformer';
-import { IsEmail, IsEnum, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  IsEnum,
+  IsStrongPassword,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
+import { UserRole } from '../enums/user-role.enum';
 
 export class CreateUserDto {
-  @IsString()
-  username: string;
-
   @IsEmail()
+  @IsNotEmpty()
   email: string;
 
+  @IsNotEmpty()
   @IsString()
-  @MinLength(6)
+  @IsStrongPassword()
   password: string;
 
-  @IsEnum(['HUNTER', 'HUNTER_DEV', 'HUNTER_ADMIN'])
-  @Transform(({ value }) => value.toUpperCase())
-  role: string;
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+
+  @IsOptional()
+  @IsNumber()
+  points?: number;
+
+  @IsOptional()
+  @IsNumber()
+  score?: number;
+
+  @IsNotEmpty()
+  @IsEnum(UserRole)
+  role: UserRole;
 }

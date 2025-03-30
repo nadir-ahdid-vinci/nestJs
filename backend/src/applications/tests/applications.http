@@ -1,0 +1,147 @@
+### Variables globales
+@baseUrl = http://localhost:3000
+
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc0MjY4MjQ3OCwiZXhwIjoxNzQyNzY4ODc4fQ.BpctKIjJYejycrSUGDzwqykHSBv455HDUdInARLUwdE
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@admin.com",
+  "password": "Admin123@"
+}
+
+### Test de récupération de toutes les applications
+GET {{baseUrl}}/applications?page=admin
+Authorization: Bearer {{token}}
+
+### Test de récupération des applications avec pagination
+GET {{baseUrl}}/applications?page=0&limit=10
+Authorization: Bearer {{token}}
+
+### Test de récupération des applications pour les hunters
+GET {{baseUrl}}/applications?page=hunter
+Authorization: Bearer {{token}}
+
+### Test de récupération des applications pour les développeurs
+GET {{baseUrl}}/applications?page=dev
+Authorization: Bearer {{token}}
+
+### Test de récupération d'une application spécifique
+GET {{baseUrl}}/applications/8
+Authorization: Bearer {{token}}
+
+### Test de création d'une application (avec logo)
+POST {{baseUrl}}/applications
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="name"
+
+Application Test 1234
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Une description détaillée de l'application qui respecte la limite minimale de 10 caractères
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="scope"
+
+Un scope qui fait plus de 5 caractères
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="open"
+
+false
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="criticalityId"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="userId"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="logo"; filename="logo.jpg"
+Content-Type: image/jpeg
+
+< ./logo.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Test de mise à jour d'une application
+PATCH {{baseUrl}}/applications/9
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "test"
+}
+### Test de récupération des niveaux de criticité
+GET {{baseUrl}}/applications/criticality
+Authorization: Bearer {{token}}
+
+### Test de récupération d'un niveau de criticité spécifique
+GET {{baseUrl}}/applications/criticality/1
+Authorization: Bearer {{token}}
+
+### Test de création d'un niveau de criticité
+POST {{baseUrl}}/applications/criticality
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "High",
+  "low": 1,
+  "medium": 2,
+  "high": 3,
+  "critical": 4
+}
+
+### Test de récupération des logs d'une application spécifique
+GET {{baseUrl}}/applications/9/logs
+Authorization: Bearer {{token}}
+
+### Test de récupération de tous les logs
+GET {{baseUrl}}/applications/logs?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### Test de cas d'erreur - Application non trouvée
+GET {{baseUrl}}/applications/999
+Authorization: Bearer {{token}}
+
+### Test de cas d'erreur - Création avec nom existant
+POST {{baseUrl}}/applications
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Application Test",
+  "description": "Test doublon",
+  "scope": "Test scope",
+  "open": false
+}
+
+### Test de cas d'erreur - Création sans logo
+POST {{baseUrl}}/applications
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Test Sans Logo",
+  "description": "Test sans logo",
+  "scope": "Test scope",
+  "open": false
+}
+
+### Test de cas d'erreur - Page invalide
+GET {{baseUrl}}/applications?page=invalid
+Authorization: Bearer {{token}}
+
+### Test de cas d'erreur - Accès non autorisé
+GET {{baseUrl}}/applications
+# Sans token d'authentification
+
+### Test de cas d'erreur - Rate limit
+# Faire plusieurs requêtes rapidement pour tester le rate limit
+GET {{baseUrl}}/applications
+Authorization: Bearer {{token}}

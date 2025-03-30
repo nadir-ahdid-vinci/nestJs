@@ -1,0 +1,51 @@
+### Configuration
+@baseUrl = http://localhost:3000
+@email = admin@admin.com
+@password = Admin123@
+
+### 1. Connexion (À exécuter en premier)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{email}}",
+    "password": "{{password}}"
+}
+
+### Stockage du token
+@authToken = {{login.response.body.token}}
+
+### 2. Récupération des statuts de commande
+GET {{baseUrl}}/order-statuses
+Authorization: Bearer {{authToken}}
+
+### 3. Création d'un nouveau statut de commande
+POST {{baseUrl}}/order-statuses
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "name": "TEST"
+}
+
+### 4. Mise à jour d'un statut de commande existant
+PATCH {{baseUrl}}/order-statuses/3
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{   
+    "name": "TEST MODIF"
+}
+
+### 5. Suppression d'un statut de commande existant
+DELETE {{baseUrl}}/order-statuses/2
+Authorization: Bearer {{authToken}}
+
+### 6. Récupération des logs des statuts de commande
+GET {{baseUrl}}/order-statuses/logs
+Authorization: Bearer {{authToken}}
+
+
+
+
