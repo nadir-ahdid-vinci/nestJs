@@ -12,6 +12,7 @@ import { LoggerService } from '../logger/logger.service';
 import * as bcrypt from 'bcrypt';
 import { UserDto } from './dto/user.dto';
 import { plainToClass } from 'class-transformer';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -25,8 +26,6 @@ export class UsersService {
 
   async create(
     createUserDto: CreateUserDto,
-    ipAddress?: string,
-    userAgent?: string,
   ): Promise<UserDto> {
     try {
       this.logger.info(`Attempting to create user with email: ${createUserDto.email}`);
@@ -53,15 +52,6 @@ export class UsersService {
       });
 
       const savedUser = await this.usersRepository.save(user);
-
-      if (ipAddress && userAgent) {
-        this.logger.audit('USER_CREATED', savedUser.id.toString(), {
-          email: savedUser.email,
-          role: savedUser.role,
-          ipAddress,
-          userAgent,
-        });
-      }
 
       return plainToClass(UserDto, savedUser);
     } catch (error) {
@@ -124,9 +114,7 @@ export class UsersService {
 
   async update(
     id: number,
-    updateData: Partial<UserDto>,
-    ipAddress: string,
-    userAgent: string,
+    updateData: UpdateUserDto,
   ): Promise<UserDto> {
     try {
       this.logger.debug(`Attempting to update user #${id}`);
@@ -145,9 +133,7 @@ export class UsersService {
       });
 
       this.logger.audit('USER_UPDATED', id.toString(), {
-        updatedFields: Object.keys(updateData),
-        ipAddress,
-        userAgent,
+        updatedFields: Object.keys(updateData)
       });
 
       return plainToClass(UserDto, updatedUser);

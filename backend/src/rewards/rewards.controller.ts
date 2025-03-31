@@ -19,7 +19,6 @@ import {
   Req,
   Delete,
   Query,
-  DefaultValuePipe,
 } from '@nestjs/common';
 import { Role } from '../auth/roles.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -33,10 +32,17 @@ import { RewardLogDto } from './dto/reward-log.dto';
 import {
   ApiTags,
   ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
   ApiConsumes,
   ApiBody,
+  ApiOkResponse,
+  ApiNotFoundResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiInternalServerErrorResponse,
+  ApiCreatedResponse,
+  ApiBadRequestResponse,
+  ApiConflictResponse,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 
@@ -70,12 +76,20 @@ export class RewardsController {
   @Get()
   @Role(UserRole.HUNTER)
   @ApiOperation({ summary: 'Récupérer les récompenses (paginées)' })
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponse({
     description: 'Liste paginée des récompenses récupérée avec succès',
-    type: Object,
+    type: [RewardDto],
   })
-  async findAll(@Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number): Promise<{
+  @ApiUnauthorizedResponse({
+    description: 'Non authentifié - Token JWT manquant ou invalide',
+  })
+  @ApiForbiddenResponse({
+    description: 'Accès refusé - Rôle insuffisant',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Erreur serveur interne',
+  })
+  async findAll(@Query('page', ParseIntPipe) page: number): Promise<{
     items: RewardDto[];
     total: number;
     pages: number;
@@ -94,14 +108,21 @@ export class RewardsController {
   @Get(':id')
   @Role(UserRole.HUNTER)
   @ApiOperation({ summary: 'Récupérer une récompense par son ID' })
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponse({
     description: 'Récompense trouvée avec succès',
     type: RewardDto,
   })
-  @ApiResponse({
-    status: 404,
+  @ApiNotFoundResponse({
     description: 'Récompense non trouvée',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Non authentifié - Token JWT manquant ou invalide',
+  })
+  @ApiForbiddenResponse({
+    description: 'Accès refusé - Rôle insuffisant',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Erreur serveur interne',
   })
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<RewardDto> {
     return await this.rewardsService.findOne(id);
@@ -114,7 +135,7 @@ export class RewardsController {
    * Gère l'upload de la photo via multer
    * @param {RequestWithUser} req - La requête avec les informations utilisateur
    * @param {CreateRewardDto} createRewardDto - Les données de la récompense
-   * @param {Express.Multer.File} photo - La photo de la récompense
+   * @param {Express.Multer.File} picture - La photo de la récompense
    * @returns {Promise<RewardDto>} La récompense créée
    * @throws {InvalidRewardPhotoException} Si la photo est invalide
    * @throws {RewardAlreadyExistsException} Si le nom existe déjà
@@ -122,32 +143,38 @@ export class RewardsController {
    */
   @Post()
   @Role(UserRole.ADMIN)
-  @UseInterceptors(FileInterceptor('photo'))
+  @UseInterceptors(FileInterceptor('picture'))
   @ApiOperation({ summary: 'Créer une nouvelle récompense' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Données de la récompense avec photo',
     type: CreateRewardDto,
   })
-  @ApiResponse({
-    status: 201,
+  @ApiCreatedResponse({
     description: 'Récompense créée avec succès',
     type: RewardDto,
   })
-  @ApiResponse({
-    status: 400,
+  @ApiBadRequestResponse({
     description: 'Données invalides ou photo manquante',
   })
-  @ApiResponse({
-    status: 409,
+  @ApiConflictResponse({
     description: 'Une récompense avec ce nom existe déjà',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Non authentifié - Token JWT manquant ou invalide',
+  })
+  @ApiForbiddenResponse({
+    description: 'Accès refusé - Rôle insuffisant',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Erreur serveur interne',
   })
   async create(
     @Req() req: RequestWithUser,
     @Body() createRewardDto: CreateRewardDto,
-    @UploadedFile() photo: Express.Multer.File,
+    @UploadedFile() picture: Express.Multer.File,
   ): Promise<RewardDto> {
-    return await this.rewardsService.create(createRewardDto, req.user.userId, photo);
+    return await this.rewardsService.create(createRewardDto, req.user.userId, picture);
   }
 
   /**
@@ -173,18 +200,24 @@ export class RewardsController {
     description: 'Données de mise à jour de la récompense',
     type: UpdateRewardDto,
   })
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponse({
     description: 'Récompense mise à jour avec succès',
     type: RewardDto,
   })
-  @ApiResponse({
-    status: 404,
+  @ApiNotFoundResponse({
     description: 'Récompense non trouvée',
   })
-  @ApiResponse({
-    status: 409,
+  @ApiConflictResponse({
     description: 'Une récompense avec ce nom existe déjà',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Non authentifié - Token JWT manquant ou invalide',
+  })
+  @ApiForbiddenResponse({
+    description: 'Accès refusé - Rôle insuffisant',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Erreur serveur interne',
   })
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -208,13 +241,20 @@ export class RewardsController {
   @Delete(':id')
   @Role(UserRole.ADMIN)
   @ApiOperation({ summary: 'Supprimer une récompense' })
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponse({
     description: 'Récompense supprimée avec succès',
   })
-  @ApiResponse({
-    status: 404,
+  @ApiNotFoundResponse({
     description: 'Récompense non trouvée',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Non authentifié - Token JWT manquant ou invalide',
+  })
+  @ApiForbiddenResponse({
+    description: 'Accès refusé - Rôle insuffisant',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Erreur serveur interne',
   })
   async remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser): Promise<void> {
     return this.rewardsService.remove(id, req.user.userId);
@@ -229,10 +269,18 @@ export class RewardsController {
   @Get('logs')
   @Role(UserRole.ADMIN)
   @ApiOperation({ summary: 'Récupérer tous les logs des récompenses' })
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponse({
     description: 'Logs des récompenses récupérés avec succès',
     type: [RewardLogDto],
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Non authentifié - Token JWT manquant ou invalide',
+  })
+  @ApiForbiddenResponse({
+    description: 'Accès refusé - Rôle insuffisant',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Erreur serveur interne',
   })
   async getRewardLogs(): Promise<RewardLogDto[]> {
     return await this.rewardsService.getRewardLogs();

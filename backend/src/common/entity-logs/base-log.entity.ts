@@ -3,7 +3,6 @@ import {
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
 export enum Action {
@@ -44,7 +43,7 @@ export class BaseLog {
   newData: any;
 
   @Column()
-  userId: string;
+  userId: number;
 
   @CreateDateColumn()
   createdAt: Date;

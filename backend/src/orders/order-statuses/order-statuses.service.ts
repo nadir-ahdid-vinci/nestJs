@@ -265,7 +265,7 @@ export class OrderStatusesService {
         queryRunner,
         EntityType.ORDER_STATUS,
         action,
-        userDto.id.toString(),
+        userDto.id,
         oldData,
         newData,
       );
@@ -273,7 +273,7 @@ export class OrderStatusesService {
       await this.baseLogService.createLog(
         EntityType.ORDER_STATUS,
         action,
-        userDto.id.toString(),
+        userDto.id,
         oldData,
         newData,
       );

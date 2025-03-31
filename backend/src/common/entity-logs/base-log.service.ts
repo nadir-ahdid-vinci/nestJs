@@ -13,7 +13,7 @@ export class BaseLogService {
   async createLog(
     entityType: EntityType,
     action: Action,
-    userId: string,
+    userId: number,
     oldData?: any,
     newData?: any,
   ): Promise<BaseLog> {
@@ -32,7 +32,7 @@ export class BaseLogService {
     queryRunner: QueryRunner,
     entityType: EntityType,
     action: Action,
-    userId: string,
+    userId: number,
     oldData?: any,
     newData?: any,
   ): Promise<BaseLog> {
@@ -54,7 +54,7 @@ export class BaseLogService {
     });
   }
 
-  async getLogsByUserId(userId: string): Promise<BaseLog[]> {
+  async getLogsByUserId(userId: number): Promise<BaseLog[]> {
     return this.logRepository.find({
       where: { userId },
       order: { createdAt: 'DESC' },

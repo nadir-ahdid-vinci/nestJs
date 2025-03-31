@@ -278,7 +278,6 @@ export class RewardsService implements OnModuleInit {
         // Sauvegarde des modifications
         const savedReward = await queryRunner.manager.save(updatedEntity);
         const savedRewardDto = plainToClass(RewardDto, savedReward);
-        
         // Création du log de modification
         await this.logRewardAction(Action.UPDATE, userDto, reward, savedRewardDto, queryRunner);
         await queryRunner.commitTransaction();
@@ -318,52 +317,48 @@ export class RewardsService implements OnModuleInit {
    * @throws {RewardHasOrdersException} Si la récompense a été commandée
    */
   async remove(id: number, adminId: number): Promise<void> {
+    // Recherche de la récompense avec ses commandes associées
+    const reward = await this.rewardRepository.findOne({
+      where: { id },
+      relations: ['orders'],
+    });
+
+    if (!reward) {
+      throw new RewardNotFoundByIdException(id);
+    }
+
+    // Vérification si la récompense a été commandée au moins une fois
+    const hasOrders = await this.rewardRepository
+      .createQueryBuilder('reward')
+      .leftJoinAndSelect('reward.orders', 'order')
+      .where('reward.id = :id', { id })
+      .getOne();
+
+    if (hasOrders?.orders?.length) {
+      throw new RewardHasOrdersException();
+    }
+
+    // Récupération des informations utilisateur et création du queryRunner
+    const userDto = await this.usersService.findOne(adminId);
+    const queryRunner = this.rewardRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      // Recherche de la récompense avec ses commandes associées
-      const reward = await this.rewardRepository.findOne({
-        where: { id },
-        relations: ['orders'],
-      });
+      // Création du log et suppression de la récompense
+      await this.logRewardAction(Action.DELETE, userDto, reward, null, queryRunner);
+      await queryRunner.manager.remove(reward);
+      await queryRunner.commitTransaction();
 
-      if (!reward) {
-        throw new RewardNotFoundByIdException(id);
-      }
-
-      // Vérification si la récompense a été commandée au moins une fois
-      const hasOrders = await this.rewardRepository
-        .createQueryBuilder('reward')
-        .leftJoinAndSelect('reward.orders', 'order')
-        .where('reward.id = :id', { id })
-        .getOne();
-
-      if (hasOrders?.orders?.length) {
-        throw new RewardHasOrdersException();
-      }
-
-      // Récupération des informations utilisateur et création du queryRunner
-      const userDto = await this.usersService.findOne(adminId);
-      const queryRunner = this.rewardRepository.manager.connection.createQueryRunner();
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-
-      try {
-        // Création du log et suppression de la récompense
-        await this.logRewardAction(Action.DELETE, userDto, reward, null, queryRunner);
-        await queryRunner.manager.remove(reward);
-        await queryRunner.commitTransaction();
-
-        // Suppression de la photo associée si elle existe
-        if (reward.photo) {
-          await this.storageService.delete(reward.photo, 'rewards');
-        }
-      } catch (error) {
-        await queryRunner.rollbackTransaction();
-        throw error;
-      } finally {
-        await queryRunner.release();
+      // Suppression de la photo associée si elle existe
+      if (reward.photo) {
+        await this.storageService.delete(reward.photo, 'rewards');
       }
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -392,18 +387,12 @@ export class RewardsService implements OnModuleInit {
         queryRunner,
         EntityType.REWARD,
         action,
-        userDto.id.toString(),
+        userDto.id,
         oldData,
         newData,
       );
     } else {
-      await this.baseLogService.createLog(
-        EntityType.REWARD,
-        action,
-        userDto.id.toString(),
-        oldData,
-        newData,
-      );
+      await this.baseLogService.createLog(EntityType.REWARD, action, userDto.id, oldData, newData);
     }
   }
 

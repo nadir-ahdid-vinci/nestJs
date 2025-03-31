@@ -3,9 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
-  ManyToOne,
   CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { Order } from '../../orders/entities/order.entity';
 import { CGU } from './cgu.entity';

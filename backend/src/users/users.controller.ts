@@ -33,25 +33,15 @@ export class UsersController {
 
   @Post()
   @Role(UserRole.ADMIN)
-  create(@Body() createUserDto: CreateUserDto, @Req() request: Request): Promise<UserDto> {
-    return this.usersService.create(
-      createUserDto,
-      request.ip || 'unknown',
-      request.headers['user-agent'] || 'Unknown',
-    );
+  create(@Body() createUserDto: CreateUserDto): Promise<UserDto> {
+    return this.usersService.create(createUserDto);
   }
 
   @Put(':id')
   update(
     @Param('id') id: string,
     @Body() updateUserDto: Partial<CreateUserDto>,
-    @Req() request: Request,
   ) {
-    return this.usersService.update(
-      +id,
-      updateUserDto as any,
-      request.ip || 'unknown',
-      request.headers['user-agent'] || 'Unknown',
-    );
+    return this.usersService.update(+id, updateUserDto as any);
   }
 }

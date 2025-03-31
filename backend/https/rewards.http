@@ -3,6 +3,22 @@
 @email = admin@admin.com
 @password = Admin123@
 
+### 0. Création d'un utilisateur
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "email": "hunter@hunter.com",
+    "password": "Hunter123@",
+    "name": "hunter",
+    "role": "hunter"
+}
+
+### /me
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{authToken}}
+
 ### 1. Connexion (À exécuter en premier)
 # @name login
 POST {{baseUrl}}/auth/login

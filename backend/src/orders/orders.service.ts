@@ -61,7 +61,7 @@ export class OrdersService {
         await this.logOrderAction(Action.CREATE, user, null, savedOrder, queryRunner);
 
         user.points -= reward.points;
-        await this.userService.update(userId, { points: user.points }, '127.0.0.1', 'system');
+        await this.userService.update(userId, { points: user.points });
 
         await this.rewardService.update(
           reward.id,
@@ -223,7 +223,7 @@ export class OrdersService {
         if (existingOrder.status.name === 'CONFIRMED') {
           const user = existingOrder.user;
           user.points += existingOrder.reward.points;
-          await this.userService.update(user.id, { points: user.points }, '127.0.0.1', 'system');
+          await this.userService.update(user.id, { points: user.points });
 
           const reward = existingOrder.reward;
           await this.rewardService.update(
@@ -275,7 +275,7 @@ export class OrdersService {
         queryRunner,
         EntityType.ORDER,
         action,
-        userDto.id.toString(),
+        userDto.id,
         oldData,
         newData,
       );
@@ -283,7 +283,7 @@ export class OrdersService {
       await this.baseLogService.createLog(
         EntityType.ORDER,
         action,
-        userDto.id.toString(),
+        userDto.id,
         oldData,
         newData,
       );
