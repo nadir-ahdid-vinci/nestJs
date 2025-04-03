@@ -30,14 +30,14 @@ export function NavButtons({ isLoggedIn, userName, userRole }: NavButtonsProps) 
         {userName && <span className="text-sm">Bonjour, {userName}</span>}
 
         {/* Afficher le lien vers les applications si l'utilisateur a le rôle requis */}
-        {userRole && hasRequiredRole(userRole, ROLES.HUNTER_DEV) && (
+        {userRole && hasRequiredRole(userRole, ROLES.hunter) && (
           <Button variant="ghost" asChild>
             <Link href="/application">Applications</Link>
           </Button>
         )}
 
         {/* Afficher le lien vers l'admin si l'utilisateur a le rôle requis */}
-        {userRole && hasRequiredRole(userRole, ROLES.HUNTER_ADMIN) && (
+        {userRole && hasRequiredRole(userRole, ROLES.admin) && (
           <Button variant="ghost" asChild>
             <Link href="/admin">Admin</Link>
           </Button>

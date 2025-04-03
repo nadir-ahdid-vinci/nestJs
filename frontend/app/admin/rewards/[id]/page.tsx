@@ -1,7 +1,12 @@
-import React from 'react';
+import { RewardDetails } from "@/components/rewards/reward-details";
+import { getReward } from "@/lib/rewards";
 
-export default function RewardPage() {
+export default async function RewardPage({ params }: { params: { id: string } }) {
+    const reward = await getReward(+params.id);
+    if (!reward) {
+        return <div>Reward not found</div>;
+    }
     return (
-        <h1>Reward</h1>
+        <RewardDetails reward={reward} />
     );
 }

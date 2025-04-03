@@ -27,6 +27,7 @@ export async function Header() {
     items: [
       { title: "Applications", href: "/admin/applications" },
       { title: "Récompenses", href: "/admin/rewards" },
+      { title: "Criticités", href: "/admin/criticalities" },
     ],
   }
 
@@ -45,12 +46,12 @@ export async function Header() {
         <NavMenu title={hunterMenu.title} items={hunterMenu.items} />
 
         {/* Menu Dev (visible par Dev et Admin) */}
-        {session.user.role && hasRequiredRole(session.user.role, ROLES.HUNTER_DEV) && (
+        {session.user.role && hasRequiredRole(session.user.role, ROLES.dev) && (
           <NavMenu title={devMenu.title} items={devMenu.items} />
         )}
 
         {/* Menu Admin (visible uniquement par Admin) */}
-        {session.user.role && hasRequiredRole(session.user.role, ROLES.HUNTER_ADMIN) && (
+        {session.user.role && hasRequiredRole(session.user.role, ROLES.admin) && (
           <NavMenu title={adminMenu.title} items={adminMenu.items} />
         )}
         </nav>

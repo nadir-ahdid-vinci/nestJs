@@ -5,7 +5,7 @@
  * Assure la traçabilité des modifications via le système de logs
  * @class RewardsService
  */
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryRunner } from 'typeorm';
 import { Reward } from './entities/reward.entity';
@@ -29,6 +29,7 @@ import { StorageDirectoryException } from '../common/exceptions/common.exception
 import { Action, EntityType } from '../common/entity-logs/base-log.entity';
 import { UserDto } from '../users/dto/user.dto';
 import * as path from 'path';
+import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
 export class RewardsService implements OnModuleInit {
@@ -36,7 +37,7 @@ export class RewardsService implements OnModuleInit {
    * Logger pour le service des récompenses
    * @private
    */
-  private readonly logger = new Logger(RewardsService.name);
+  private readonly logger: LoggerService;
 
   /**
    * Chemin du dossier de stockage des photos de récompenses
@@ -51,6 +52,7 @@ export class RewardsService implements OnModuleInit {
    * @param {StorageService} storageService - Service de gestion du stockage des fichiers
    * @param {BaseLogService} baseLogService - Service de gestion des logs
    * @param {UsersService} userService - Service de gestion des utilisateurs
+   * @param {LoggerService} loggerService - Service de gestion des logs
    */
   constructor(
     @InjectRepository(Reward)
@@ -58,7 +60,11 @@ export class RewardsService implements OnModuleInit {
     private readonly storageService: StorageService,
     private readonly usersService: UsersService,
     private readonly baseLogService: BaseLogService,
-  ) {}
+    loggerService: LoggerService,
+  ) {
+    this.logger = loggerService;
+    this.logger.setContext('RewardsService');
+  }
 
   /**
    * Initialise le module en créant le dossier de stockage des photos
@@ -68,7 +74,7 @@ export class RewardsService implements OnModuleInit {
     try {
       if (!fs.existsSync(this.uploadsPath)) {
         await fs.promises.mkdir(this.uploadsPath, { recursive: true });
-        this.logger.log('Dossier uploads/rewards créé avec succès');
+        this.logger.info('Dossier uploads/rewards créé avec succès');
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.stack || error.message : 'Unknown error';
@@ -101,7 +107,7 @@ export class RewardsService implements OnModuleInit {
         take: itemsPerPage,
       });
 
-      this.logger.log(`Récupération des récompenses page ${page} avec succès`);
+      this.logger.info(`Récupération des récompenses page ${page} avec succès`);
 
       return {
         items: rewards.map(reward => plainToClass(RewardDto, reward)),
@@ -109,7 +115,8 @@ export class RewardsService implements OnModuleInit {
         pages,
       };
     } catch (error: unknown) {
-      this.logger.error('Erreur lors de la récupération des récompenses', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error('Erreur lors de la récupération des récompenses', errorMessage);
       throw new Error('Erreur lors de la récupération des récompenses');
     }
   }
@@ -128,7 +135,7 @@ export class RewardsService implements OnModuleInit {
         throw new RewardNotFoundByIdException(id);
       }
 
-      this.logger.log(`Récupération de la récompense ${id} avec succès`);
+      this.logger.info(`Récupération de la récompense ${id} avec succès`);
 
       return plainToClass(RewardDto, reward);
     } catch (error) {
@@ -185,6 +192,7 @@ export class RewardsService implements OnModuleInit {
         try {
           fileName = await this.storageService.save(file, 'rewards');
         } catch (error) {
+          this.logger.error('Erreur lors de la sauvegarde de la photo', error);
           throw new StorageDirectoryException('rewards', error.message);
         }
 
@@ -203,10 +211,13 @@ export class RewardsService implements OnModuleInit {
 
         await queryRunner.commitTransaction();
 
-        this.logger.log(`Récompense "${savedReward.name}" créée avec succès`);
+        this.logger.info('Récompense créée avec succès');
         return savedRewardDto;
       } catch (error) {
         await queryRunner.rollbackTransaction();
+        this.logger.error(
+          `Erreur lors de la création de la récompense "${createRewardDto.name}": ${error.message}`,
+        );
         throw error;
       } finally {
         await queryRunner.release();
@@ -259,6 +270,9 @@ export class RewardsService implements OnModuleInit {
             where: { name: updateRewardDto.name },
           });
           if (existingReward) {
+            this.logger.error(
+              `Erreur lors de la mise à jour de la récompense "${updateRewardDto.name}": ${existingReward.name} existe déjà`,
+            );
             throw new RewardAlreadyExistsException(updateRewardDto.name);
           }
         }
@@ -287,7 +301,7 @@ export class RewardsService implements OnModuleInit {
           await this.storageService.delete(reward.photo, 'rewards');
         }
 
-        this.logger.log(`Récompense "${savedReward.name}" mise à jour avec succès`);
+        this.logger.info(`Récompense ${id} mise à jour avec succès`);
         return savedRewardDto;
       } catch (error) {
         // Rollback en cas d'erreur
@@ -324,6 +338,7 @@ export class RewardsService implements OnModuleInit {
     });
 
     if (!reward) {
+      this.logger.error(`Récompense avec l'ID ${id} non trouvée`);
       throw new RewardNotFoundByIdException(id);
     }
 
@@ -354,7 +369,10 @@ export class RewardsService implements OnModuleInit {
       if (reward.photo) {
         await this.storageService.delete(reward.photo, 'rewards');
       }
+
+      this.logger.info(`Récompense ${id} supprimée avec succès`);
     } catch (error) {
+      this.logger.error(`Erreur lors de la suppression de la récompense ${id}: ${error.message}`);
       await queryRunner.rollbackTransaction();
       throw error;
     } finally {
@@ -391,8 +409,10 @@ export class RewardsService implements OnModuleInit {
         oldData,
         newData,
       );
+      this.logger.info('Log créé avec succès');
     } else {
       await this.baseLogService.createLog(EntityType.REWARD, action, userDto.id, oldData, newData);
+      this.logger.info('Log créé avec succès');
     }
   }
 
@@ -404,6 +424,7 @@ export class RewardsService implements OnModuleInit {
     try {
       // Récupération et transformation des logs
       const logs = await this.baseLogService.getLogsByEntityType(EntityType.REWARD);
+      this.logger.info(`Récupération des logs des récompenses avec succès`);
       return logs.map(log => plainToClass(RewardLogDto, log));
     } catch (error) {
       this.logger.error('Erreur lors de la récupération des logs des récompenses:', error);

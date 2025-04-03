@@ -1,0 +1,76 @@
+### Configuration
+@baseUrl = http://localhost:3000
+@email = admin@admin.com
+@password = Admin123@
+
+### 0. Création d'un utilisateur
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "email": "hunter@hunter.com",
+    "password": "Hunter123@",
+    "name": "hunter",
+    "role": "hunter"
+}
+
+### /me
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{authToken}}
+
+### 1. Connexion (À exécuter en premier)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{email}}",
+    "password": "{{password}}"
+}
+
+### Stockage du token
+@authToken = {{login.response.body.token}}
+
+### Créer une nouvelle commande
+POST {{baseUrl}}/orders
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "rewardId": 2
+}
+
+### Récupérer une commande spécifique
+GET {{baseUrl}}/orders/1
+Authorization: Bearer {{authToken}}
+
+### Récupérer toutes les commandes (avec pagination)
+GET {{baseUrl}}/orders?page=1
+Authorization: Bearer {{authToken}}
+
+### Test de cas d'erreur - Commande non trouvée
+GET {{baseUrl}}/orders/999
+Authorization: Bearer {{authToken}}
+
+### Test de cas d'erreur - Points insuffisants
+POST {{baseUrl}}/orders
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "rewardId": 1
+}
+
+### Test de cas d'erreur - Récompense non trouvée
+POST {{baseUrl}}/orders
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "rewardId": 999
+}
+
+### Test de cas d'erreur - Accès non autorisé
+GET {{baseUrl}}/orders
+# Sans token d'authentification 

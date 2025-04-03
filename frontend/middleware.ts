@@ -7,10 +7,11 @@ export async function middleware(request: NextRequest) {
 
   // Vérifier les routes protégées
   const protectedRoutes = [
-    { path: "/admin", requiredRole: ROLES.HUNTER_ADMIN },
-    { path: "/dev", requiredRole: ROLES.HUNTER_DEV },
-    { path: "/hunter", requiredRole: ROLES.HUNTER },
-    { path: "/application", requiredRole: ROLES.HUNTER },
+    { path: "/admin", requiredRole: ROLES.admin },
+    { path: "/dev", requiredRole: ROLES.dev },
+    { path: "/hunter", requiredRole: ROLES.hunter },
+    { path: "/application", requiredRole: ROLES.hunter },
+    { path: "/admin/criticalities", requiredRole: ROLES.admin },
   ]
 
   // Trouver la route protégée correspondante

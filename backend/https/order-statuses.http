@@ -26,7 +26,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-    "name": "TEST"
+    "name": "PENDING"
 }
 
 ### 4. Mise à jour d'un statut de commande existant

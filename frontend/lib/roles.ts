@@ -1,14 +1,14 @@
 // Définition de la hiérarchie des rôles
 export const ROLES = {
-    HUNTER: "HUNTER",
-    HUNTER_DEV: "HUNTER_DEV",
-    HUNTER_ADMIN: "HUNTER_ADMIN",
+    hunter: "hunter",
+    dev: "dev",
+    admin: "admin",
   } as const
   
   export type Role = keyof typeof ROLES
   
   // Hiérarchie des rôles (du plus bas au plus élevé)
-  const ROLE_HIERARCHY: Role[] = [ROLES.HUNTER, ROLES.HUNTER_DEV, ROLES.HUNTER_ADMIN]
+  const ROLE_HIERARCHY: Role[] = [ROLES.hunter, ROLES.dev, ROLES.admin]
   
   /**
    * Vérifie si un utilisateur a un rôle suffisant pour accéder à une ressource

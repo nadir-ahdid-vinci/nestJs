@@ -1,0 +1,25 @@
+### Variables globales
+@baseUrl = http://localhost:3000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc0MjY4MjQ3OCwiZXhwIjoxNzQyNzY4ODc4fQ.BpctKIjJYejycrSUGDzwqykHSBv455HDUdInARLUwdE
+
+### Login pour obtenir un token
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@admin.com",
+  "password": "Admin123@"
+}
+
+### Créer une nouvelle commande
+POST {{baseUrl}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "rewardId": 1
+}
+
+### Vérifier la commande créée
+GET {{baseUrl}}/orders/1
+Authorization: Bearer {{token}} 

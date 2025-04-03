@@ -1,32 +1,80 @@
-import { getSession } from '@/lib/auth'
-import { hasRequiredRole, ROLES } from "@/lib/roles"
-import { redirect } from 'next/navigation'
-import { getApplication } from '@/lib/applications'
-import { Application } from "@/components/application"
+import { getSession } from "@/lib/auth";
+import { hasRequiredRole, ROLES } from "@/lib/roles";
+import { redirect, notFound } from "next/navigation";
+import { getApplication, getApplicationLogs } from "@/lib/applications";
+import { ApplicationLogs } from "@/components/application-logs";
+import { ApplicationDetails } from "@/components/application-details";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Metadata } from "next";
+import { getUsers } from "@/lib/users";
+import { getCriticalities } from "@/lib/criticalities";
 
-export default async function ApplicationPage({ params }: { params: { id: string } }) {
-    const session = await getSession()
-    if (!session || !hasRequiredRole(session.user.role, ROLES.HUNTER)) {
-        redirect("/login?error=unauthorized")
-        
-    }
+interface ApplicationPageProps {
+  params: { id: string };
+}
 
-    const application = await getApplication(+params.id)
-    
-    return (
-        <main className="flex min-h-screen flex-col p-8">
-            <div className="max-w-7xl w-full mx-auto">
-            <h1 className="text-3xl font-bold mb-6">Applications Hunter</h1>
-            <p className="text-xl mb-8">
-                Bienvenue, {session.user.name}! Voici la liste des applications disponibles pour les hunters.
-            </p>
-    
-            {application ? (
-                <Application application={application} />
-            ) : (
-                <p>Application not found.</p>
-            )}
-            </div>
-        </main>
-        );
+export async function generateMetadata({
+  params,
+}: ApplicationPageProps): Promise<Metadata> {
+  const application = await getApplication(+params.id);
+
+  if (!application) {
+    return {
+      title: "Application non trouvée",
+    };
+  }
+
+  return {
+    title: `${application.name} - Détails de l'application`,
+    description: application.description,
+  };
+}
+
+export default async function ApplicationPage({
+  params,
+}: ApplicationPageProps) {
+  const session = await getSession();
+  if (!session || !hasRequiredRole(session.user.role, ROLES.hunter)) {
+    redirect("/login");
+  }
+
+  const isAdmin = hasRequiredRole(session.user.role, ROLES.admin);
+
+  // Ne récupérer les logs et les données supplémentaires que si l'utilisateur est admin
+  const [application, logs, users, criticalities] = await Promise.all([
+    getApplication(+params.id),
+    isAdmin
+      ? getApplicationLogs(+params.id)
+      : Promise.resolve({ items: [], total: 0, page: 1, totalPages: 1 }),
+    isAdmin ? getUsers() : Promise.resolve([]),
+    isAdmin ? getCriticalities() : Promise.resolve([]),
+  ]);
+
+  if (!application) {
+    notFound();
+  }
+
+  return (
+    <div className="container py-8">
+      <Tabs defaultValue="details">
+        <TabsList>
+          <TabsTrigger value="details">Détails</TabsTrigger>
+          {isAdmin && <TabsTrigger value="history">Historique</TabsTrigger>}
+        </TabsList>
+        <TabsContent value="details">
+          <ApplicationDetails
+            application={application}
+            users={users}
+            criticalities={criticalities}
+            isAdmin={isAdmin}
+          />
+        </TabsContent>
+        {isAdmin && (
+          <TabsContent value="history">
+            <ApplicationLogs logs={logs.items} />
+          </TabsContent>
+        )}
+      </Tabs>
+    </div>
+  );
 }

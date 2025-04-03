@@ -5,9 +5,7 @@ import { OrderStatus } from './entities/order-status.entity';
 import { QueryRunner, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseLogService } from '../../common/entity-logs/base-log.service';
-import { ConfigService } from '@nestjs/config';
 import {
-  InvalidOrderStatusDtoException,
   OrderStatusAlreadyExistsException,
   OrderStatusNotFoundException,
   OrderStatusInUseException,
@@ -19,14 +17,14 @@ import { OrderStatusDto } from './dto/order-status.dto';
 import { Action, EntityType } from '../../common/entity-logs/base-log.entity';
 import { UserDto } from '../../users/dto/user.dto';
 import { OrderStatusLogDto } from './dto/order-status-log.dto';
-
+import { LoggerService } from '../../logger/logger.service';
 @Injectable()
 export class OrderStatusesService {
   /**
    * Logger pour le service des récompenses
    * @private
    */
-  private readonly logger = new Logger(OrderStatusesService.name);
+  private readonly logger: LoggerService;
 
   /**
    * Constructeur du service
@@ -39,9 +37,12 @@ export class OrderStatusesService {
     @InjectRepository(OrderStatus)
     private readonly orderStatusRepository: Repository<OrderStatus>,
     private readonly baseLogService: BaseLogService,
-    private readonly configService: ConfigService,
     private readonly usersService: UsersService,
-  ) {}
+    loggerService: LoggerService,
+  ) {
+    this.logger = loggerService;
+    this.logger.setContext('OrderStatusesService');
+  }
 
   /**
    * Crée un nouveau statut de commande
@@ -56,7 +57,9 @@ export class OrderStatusesService {
     userId: number,
   ): Promise<OrderStatusDto> {
     try {
-      const existingOrderStatus = await this.findOneByName(createOrderStatusDto.name);
+      const existingOrderStatus = await this.orderStatusRepository.findOne({
+        where: { name: createOrderStatusDto.name },
+      });
 
       if (existingOrderStatus) {
         throw new OrderStatusAlreadyExistsException(createOrderStatusDto.name);
@@ -81,9 +84,12 @@ export class OrderStatusesService {
         );
         await queryRunner.commitTransaction();
 
-        this.logger.log(`Statut de commande "${savedOrderStatusDto.name}" créé avec succès`);
+        this.logger.info(`Statut de commande "${savedOrderStatusDto.name}" créé avec succès`);
         return savedOrderStatusDto;
       } catch (error) {
+        this.logger.error(
+          `Erreur lors de la création du statut de commande "${createOrderStatusDto.name}": ${error.message}`,
+        );
         await queryRunner.rollbackTransaction();
         throw error;
       } finally {
@@ -103,6 +109,7 @@ export class OrderStatusesService {
   async findAll(): Promise<OrderStatusDto[]> {
     try {
       const orderStatuses = await this.orderStatusRepository.find();
+      this.logger.info(`Récupération des statuts de commande avec succès`); 
       return orderStatuses.map(orderStatus => plainToClass(OrderStatusDto, orderStatus));
     } catch (error) {
       this.logger.error(
@@ -229,7 +236,7 @@ export class OrderStatusesService {
         await queryRunner.manager.remove(orderStatus);
         await queryRunner.commitTransaction();
 
-        this.logger.log(`Statut de commande #${id} supprimé avec succès`);
+        this.logger.info(`Statut de commande #${id} supprimé avec succès`);
       } catch (error) {
         await queryRunner.rollbackTransaction();
         throw error;
@@ -269,6 +276,7 @@ export class OrderStatusesService {
         oldData,
         newData,
       );
+      this.logger.info('Log créé avec succès');
     } else {
       await this.baseLogService.createLog(
         EntityType.ORDER_STATUS,
@@ -277,6 +285,7 @@ export class OrderStatusesService {
         oldData,
         newData,
       );
+      this.logger.info('Log créé avec succès');
     }
   }
 
@@ -287,6 +296,7 @@ export class OrderStatusesService {
   async getOrderStatusLogs(): Promise<OrderStatusLogDto[]> {
     try {
       const logs = await this.baseLogService.getLogsByEntityType(EntityType.ORDER_STATUS);
+      this.logger.info('Récupération des logs des statuts de commande avec succès');
       return logs.map(log => plainToClass(OrderStatusLogDto, log));
     } catch (error) {
       this.logger.error('Erreur lors de la récupération des logs des statuts de commande:', error);

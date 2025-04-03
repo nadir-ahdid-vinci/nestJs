@@ -5,10 +5,9 @@
  * Gère l'upload des photos via un intercepteur dédié
  * @class OrdersController
  */
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { UserRole } from '../users/enums/user-role.enum';
@@ -60,8 +59,10 @@ export class OrdersController {
 
   @Get()
   @Role(UserRole.ADMIN)
-  findAll() {
-    return this.ordersService.findAll();
+  findAll(
+    @Query('page') page: number,
+  ) {
+    return this.ordersService.findAll(page);
   }
 
   @Get(':id')
@@ -73,10 +74,9 @@ export class OrdersController {
   @Role(UserRole.ADMIN)
   update(
     @Param('id') orderId: string,
-    @Body() updateOrderDto: UpdateOrderDto,
     @Req() req: RequestWithUser,
   ) {
-    return this.ordersService.update(+orderId, updateOrderDto, req.user.userId);
+    return this.ordersService.update(+orderId, req.user.userId);
   }
 
   @Delete(':id')

@@ -1,50 +1,43 @@
-import { getSession } from '@/lib/auth'
-import { hasRequiredRole, ROLES } from '@/lib/roles';
-import { redirect } from 'next/navigation';
-import { getRewards } from '@/lib/rewards';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
+import { getSession } from "@/lib/auth";
+import { hasRequiredRole, ROLES } from "@/lib/roles";
+import { redirect } from "next/navigation";
+import { RewardList } from "@/components/rewards/reward-list";
+import { getRewards } from "@/lib/rewards";
 
-export default async function RewardsPage() {
-    const session = await getSession()
+interface PageProps {
+  searchParams: {
+    page?: string;
+  };
+}
 
-    if (!session || !hasRequiredRole(session.user?.role, ROLES.HUNTER)) {
-        redirect("/login?error=unauthorized")
-    }
+export default async function RewardsPage({ searchParams }: PageProps) {
+  const session = await getSession();
 
-    const rewards = await getRewards()
+  if (!session || !hasRequiredRole(session.user?.role, ROLES.hunter)) {
+    redirect("/login?error=unauthorized");
+  }
 
-    return (
-        <main className="flex min-h-screen flex-col p-8">
-            <div className="max-w-7xl w-full mx-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold">Récompenses</h1>
-                </div>
+  const page = searchParams.page ? parseInt(searchParams.page) : 1;
+  const rewards = await getRewards(page);
 
-                <p className="text-xl mb-8">
-                    Bienvenue, {session.user.name}! Voici la liste des récompenses disponibles.
-                </p>
+  return (
+    <main className="flex min-h-screen flex-col p-8">
+      <div className="max-w-7xl w-full mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Récompenses</h1>
+        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {rewards.map((reward) => (
-                        <Card key={reward.id} className="overflow-hidden">
-                            <CardHeader>
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <CardTitle>
-                                            <Link href={`/reward/${reward.id}`}>{reward.name}</Link>
-                                        </CardTitle>
-                                        <CardDescription>{reward.description}</CardDescription>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm">{reward.description}</p>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            </div>
-        </main>
-    );
+        <p className="text-xl mb-8">
+          Bienvenue, {session.user.name}! Voici la liste des récompenses
+          disponibles.
+        </p>
+        <RewardList
+          rewards={rewards.items}
+          total={rewards.total}
+          pages={rewards.pages}
+          currentPage={page}
+        />
+      </div>
+    </main>
+  );
 }
